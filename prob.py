@@ -11,6 +11,8 @@ print "DIM?"
 DIM = int(raw_input())
 print "iter?"
 iternum = int(raw_input())
+print "filename"
+fname = raw_input()
 
 #欠損値は0として行列化
 rate = np.zeros([USER_NUM,ITEM_NUM])
@@ -38,19 +40,19 @@ learn("ml-100k/u1.base")
 user_feature = np.ones([USER_NUM,DIM])
 item_feature = np.ones([ITEM_NUM,DIM])
 
-#for i in range(USER_NUM):
-#    for j in range(DIM):
-#        user_feature[i][j] = random.random()
-#for i in range(ITEM_NUM):
-#    for j in range(DIM):
-#        item_feature[i][j] = random.random()
+for i in range(USER_NUM):
+    for j in range(DIM):
+        user_feature[i][j] = random.random()
+for i in range(ITEM_NUM):
+    for j in range(DIM):
+        item_feature[i][j] = random.random()
 
 
 #誤差を求める
-def square_error():
+def square_error(rating):
     error = 0
     count = 0
-    for i,v in enumerate(testrate):
+    for i,v in enumerate(rating): #testrate or rate
         for j,w in enumerate(v): #rate[i][j]と特徴ベクトルの内積を比較
             if w != 0:
                 error += (w-inner_product(user_feature[i],item_feature[j]))**2
@@ -72,22 +74,31 @@ def update_parameter():
         uid = dat[0]
         iid = dat[1]
         val = dat[2]
-        user_feature[uid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*item_feature[iid])
-        item_feature[iid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*user_feature[uid])
-        #user_feature[uid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*item_feature[iid] + user_feature[uid]*0.01)
-        #item_feature[iid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*user_feature[uid] + item_feature[iid]*0.01)
+        #user_feature[uid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*item_feature[iid])
+        #item_feature[iid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*user_feature[uid])
+        user_feature[uid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*item_feature[iid] + user_feature[uid]*0.1)
+        item_feature[iid] -= ALF * (-(val - user_feature[uid].T.dot(item_feature[iid]))*user_feature[uid] + item_feature[iid]*0.1)
 prev = 100000000
 errorlist = []
+train_data = ""
+test_data = ""
 for i in range(1,iternum+1):
-    ALF = 0.001
+    ALF = 0.005
     update_parameter()
-    ave_error = square_error()/20000
-    print i,ave_error
+    ave_error = square_error(testrate)/20000
+    test_data +=  str(i) + " " + str(ave_error) + "\n"
+    ave_error = square_error(rate)/80000
+    train_data +=  str(i) + " " + str(ave_error) + "\n"
+    print i 
     errorlist.append(ave_error)
     prev = ave_error
 
-pyplot.plot(errorlist)
-pyplot.show()
+f = open(fname + "_test.dat", 'w')
+f.write(test_data)
+f.close()
+f = open(fname + "_train.dat", 'w')
+f.write(train_data)
+f.close
 
 #テストを行う
 #rate = [[0 for i in range(ITEM_NUM)] for j in range(USER_NUM)]
